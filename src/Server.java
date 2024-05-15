@@ -1,48 +1,48 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Server {
+
     private static final int PORT = 8080;
-    private static final String END_CONNECTION = "Client has turned off the connection";
-    public static void main(String[] args) {
-        Socket socket = null;
-        InputStreamReader inputStreamReader = null;
-        OutputStreamWriter outputStreamWriter = null;
-        BufferedReader bufferedReader = null;
-        BufferedWriter bufferedWriter = null;
+    private ServerSocket serverSocket;
 
-        while (true){
-            try (ServerSocket serverSocket = new ServerSocket(PORT)){
-                socket = serverSocket.accept();
-                inputStreamReader = new InputStreamReader(socket.getInputStream());
-                outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
+    public Server(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+    }
 
-                bufferedReader = new BufferedReader(inputStreamReader);
-                bufferedWriter = new BufferedWriter(outputStreamWriter);
+    public void startServer() {
+        try{
 
-                while (true){
-                    String msgFromClient = bufferedReader.readLine();
-                    System.out.println("Client: " + msgFromClient);
+            while(!serverSocket.isClosed()){
 
-                    bufferedWriter.write("Message received.");
-                    bufferedWriter.newLine();
-                    bufferedWriter.flush();
+                Socket socket = serverSocket.accept();
+                System.out.println("A new client has arrived.");
+                ClientHandler clientHandler = new ClientHandler(socket);
 
-                    if (msgFromClient.equalsIgnoreCase("BYE")){
-                        break;
-                    }
-                }
+                Thread thread = new Thread(clientHandler);
+                thread.start();
 
-                socket.close();
-                inputStreamReader.close();
-                outputStreamWriter.close();
-                bufferedReader.close();
-                bufferedWriter.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
+
+        } catch (IOException exception){
+            exception.printStackTrace();
         }
+    }
+
+    public void closeServerSocket(){
+        try{
+            if (serverSocket != null){
+                serverSocket.close();
+            }
+        } catch (IOException exception){
+            exception.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        Server server = new Server(serverSocket);
+        server.startServer();
     }
 }
