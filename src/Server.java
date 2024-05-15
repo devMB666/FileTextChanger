@@ -7,31 +7,42 @@ public class Server {
     private static final int PORT = 8080;
     private static final String END_CONNECTION = "Client has turned off the connection";
     public static void main(String[] args) {
-        try(ServerSocket serverSocket = new ServerSocket(PORT)){
-            while(true) {
-                Socket socket = serverSocket.accept(); // принимает подключение
-                System.out.println("Client connected");
-                Scanner reader = new Scanner(socket.getInputStream());
-                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                Scanner input = new Scanner(System.in);
-                while(input.hasNextLine()) {
-                    String line = input.nextLine();
-                    writer.println(line);
+        Socket socket = null;
+        InputStreamReader inputStreamReader = null;
+        OutputStreamWriter outputStreamWriter = null;
+        BufferedReader bufferedReader = null;
+        BufferedWriter bufferedWriter = null;
+
+        while (true){
+            try (ServerSocket serverSocket = new ServerSocket(PORT)){
+                socket = serverSocket.accept();
+                inputStreamReader = new InputStreamReader(socket.getInputStream());
+                outputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
+
+                bufferedReader = new BufferedReader(inputStreamReader);
+                bufferedWriter = new BufferedWriter(outputStreamWriter);
+
+                while (true){
+                    String msgFromClient = bufferedReader.readLine();
+                    System.out.println("Client: " + msgFromClient);
+
+                    bufferedWriter.write("Message received.");
+                    bufferedWriter.newLine();
+                    bufferedWriter.flush();
+
+                    if (msgFromClient.equalsIgnoreCase("BYE")){
+                        break;
+                    }
                 }
-//                while (reader.hasNextLine()) {
-//                    String line = reader.nextLine();
-//                    if (line.equals("END")){
-//                        System.out.println(END_CONNECTION);
-//                        break;
-//                    }
-//                    System.out.println(line);
-//                }
-                reader.close();
-                writer.close();
+
                 socket.close();
+                inputStreamReader.close();
+                outputStreamWriter.close();
+                bufferedReader.close();
+                bufferedWriter.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }
